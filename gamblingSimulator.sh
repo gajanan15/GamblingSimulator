@@ -2,25 +2,43 @@
 
 echo "Welcome To Gambling Simulator"
 
+#constant
 WINNING_LIMIT=150
 LOOSING_LIMIT=50
 BET=1
-stake=100
 
+#variable
+stake=100
 cashInHand=$stake
-while [[ $cashInHand -lt $WINNING_LIMIT && $cashInHand -gt $LOOSING_LIMIT ]]
+winningAmount=0
+loosingAmount=0
+
+for((i=1;i<=20;i++))
 do
-	if [ $((RANDOM%2)) -eq 1 ]
+	while [[ $cashInHand -lt $WINNING_LIMIT && $cashInHand -gt $LOOSING_LIMIT ]]
+	do
+		if [ $((RANDOM%2)) -eq 1 ]
+		then
+			cashInHand=$(($cashInHand + $BET))
+		else
+			cashInHand=$(($cashInHand - $BET))
+		fi
+	done
+	if [ $cashInHand -eq $WINNING_LIMIT ]
 	then
-		cashInHand=$(($cashInHand + $BET))
+		winningAmount=$(($winningAmount+50))
+		cashInHand=$stake
 	else
-		cashInHand=$(($cashInHand - $BET))
+		loosingAmount=$(($loosingAmount+50))
+		cashInHand=$stake
 	fi
 done
-
-if [ $cashInHand -eq $WINNING_LIMIT ]
+if [ $winningAmount -gt $loosingAmount ]
 then
-	echo "Gambler Won And Resign for the day"
+	echo "You Won by $(($winningAmount - $loosingAmount)) in 20 days"
+elif [ $winningAmount -lt $loosingAmount ]
+then
+	echo "You lost by $(($loosingAmount - $winningAmount)) in 20 days"
 else
-	echo "Gambler Loose And Resign for the day"
+	echo "neither won nor lost"
 fi
