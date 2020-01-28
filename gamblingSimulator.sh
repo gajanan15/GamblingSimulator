@@ -1,11 +1,10 @@
 #!/bin/bash -x
-
 echo "Welcome To Gambling Simulator"
 
 #constant
 WINNING_LIMIT=150
 LOOSING_LIMIT=50
-NUMBEROFDAYS=20
+NUMBER_OF_DAYS=20
 BET=1
 
 #variable
@@ -15,8 +14,12 @@ winningAmount=0
 loosingAmount=0
 wonCount=0
 lostCount=0
+currentAmount=0
 
-for((i=1;i<=$NUMBEROFDAYS;i++))
+#Dictionary
+declare -A amountPerDay
+
+for((i=1;i<=$NUMBER_OF_DAYS;i++))
 do
 	while [[ $cashInHand -lt $WINNING_LIMIT && $cashInHand -gt $LOOSING_LIMIT ]]
 	do
@@ -29,14 +32,17 @@ do
 	done
 	if [ $cashInHand -eq $WINNING_LIMIT ]
 	then
-		winningAmount=$(($winningAmount+50))
+		winningAmount=$(($winningAmount + 50))
 		cashInHand=$stake
 		((wonCount++))
+		currentAmount=$(($currentAmount + 50))
 	else
-		loosingAmount=$(($loosingAmount+50))
+		loosingAmount=$(($loosingAmount + 50))
 		cashInHand=$stake
 		((lostCount++))
+		currentAmount=$(($currentAmount - 50))
 	fi
+	amountPerDay[$i]=$currentAmount
 done
 if [ $winningAmount -gt $loosingAmount ]
 then
@@ -50,6 +56,18 @@ fi
 
 echo "Number of days won : $wonCount"
 echo "Number Of Days lost : $lostCount"
+echo "Total Amount won : $winningAmount"
+echo "Total Amount lost : $loosingAmount"
+echo ${!amountPerDay[@]}
+echo ${amountPerDay[@]}
 
-echo "Total Amount won : $(($wonCount*50))"
-echo "Total Amount lost : $(($lostCount*50))"
+function checkLuck() {
+for i in ${!amountPerDay[@]}
+do
+	echo "$i ${amountPerDay[$i]}"
+done | sort -k2 $1 | head -1
+}
+echo "Luckiest Day :"
+checkLuck -rn
+echo "Unluckiest Day : "
+checkLuck -n
