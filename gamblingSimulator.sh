@@ -2,14 +2,15 @@
 echo "Welcome To Gambling Simulator"
 
 #constant
-WINNING_LIMIT=150
-LOOSING_LIMIT=50
+PERCENTAGE=50
+STAKE=100
+WINNING_LIMIT=$(($(($PERCENTAGE*$STAKE/100)) + $STAKE))
+LOOSING_LIMIT=$(($STAKE-$(($PERCENTAGE*$STAKE/100))))
 NUMBER_OF_DAYS=20
 BET=1
 
 #variable
-stake=100
-cashInHand=$stake
+cashInHand=$STAKE
 winningAmount=0
 loosingAmount=0
 wonCount=0
@@ -18,39 +19,50 @@ currentAmount=0
 
 #Dictionary
 declare -A amountPerDay
+declare -A winOrLooseDictionary
+
+function bet() {
+	if [ $((RANDOM%2)) -eq 1 ]
+	then
+		cashInHand=$(($cashInHand + $BET))
+	else
+		cashInHand=$(($cashInHand - $BET))
+	fi
+}
+
+function winOrLoose() {
+	if [[ $cashInHand -eq $WINNING_LIMIT ]]
+	then
+		winningAmount=$(($winningAmount + $PERCENTAGE))
+		cashInHand=$STAKE
+		((wonCount++))
+		currentAmount=$(($currentAmount + $PERCENTAGE))
+		winOrLooseDictionary[$1]="Won"
+	else
+		loosingAmount=$(($loosingAmount + $PERCENTAGE))
+		cashInHand=$STAKE
+		((lostCount++))
+		currentAmount=$(($currentAmount - $PERCENTAGE))
+		winOrLooseDictionary[$1]="Lost"
+	fi
+}
 
 function playGame() {
 	for((i=1;i<=$NUMBER_OF_DAYS;i++))
 	do
 		while [[ $cashInHand -lt $WINNING_LIMIT && $cashInHand -gt $LOOSING_LIMIT ]]
 		do
-			if [ $((RANDOM%2)) -eq 1 ]
-			then
-				cashInHand=$(($cashInHand + $BET))
-			else
-				cashInHand=$(($cashInHand - $BET))
-			fi
+			bet
 		done
-		if [ $cashInHand -eq $WINNING_LIMIT ]
-		then
-			winningAmount=$(($winningAmount + 50))
-			cashInHand=$stake
-			((wonCount++))
-			currentAmount=$(($currentAmount + 50))
-		else
-			loosingAmount=$(($loosingAmount + 50))
-			cashInHand=$stake
-			((lostCount++))
-			currentAmount=$(($currentAmount - 50))
-		fi
+		winOrLoose $i
 		amountPerDay[$i]=$currentAmount
 	done
 	if [ $winningAmount -gt $loosingAmount ]
 	then
-		echo "You Won by $(($winningAmount - $loosingAmount)) in 20 days"
+		echo "Total Amount Win in 20 Days : $(($winningAmount - $loosingAmount))"
 	elif [ $winningAmount -lt $loosingAmount ]
 	then
-		echo "You lost by $(($loosingAmount - $winningAmount)) in 20 days"
+		echo "Total Amount lost in 20 Days : $(($loosingAmount - $winningAmount))"
 	else
 		echo "neither won nor lost"
 	fi
@@ -59,6 +71,11 @@ function playGame() {
 	echo "Number Of Days lost : $lostCount"
 	echo "Total Amount won : $winningAmount"
 	echo "Total Amount lost : $loosingAmount"
+	echo "Keys          : ${!amountPerDay[@]}"
+	echo "Amount Per Day: ${amountPerDay[@]}"
+	echo
+	echo "keys                    : ${!winOrLooseDictionary[@]}"
+	echo "Resign With Won Or Lost : ${winOrLooseDictionary[@]}"
 }
 
 function checkLuck() {
@@ -75,7 +92,8 @@ do
 	checkLuck -rn
 	echo "Unluckiest Day : "
 	checkLuck -n
-	if [ ${amountPerDay[20]} -ge 0 ]
+	differenceOfWonOrLostAmount=$(($wonCount*$PERCENTAGE - $lostCount*$PERCENTAGE))
+	if [ $differenceOfWonOrLostAmount -ge 0 ]
 	then
 		read -p "do you want to continue for next month(y/n): " result
 		if [ $result == "y" ]
@@ -85,6 +103,7 @@ do
 			loosingAmount=0
 			wonCount=0
 			lostCount=0
+			currentAmount=0
 		else
 			break
 		fi
